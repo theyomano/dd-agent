@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ontario DD Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0e0c;
+    --surface: #181714;
+    --surface2: #201e1a;
+    --border: #2e2b26;
+    --gold: #c4922a;
+    --gold-light: #e0b050;
+    --gold-dim: #7a5a1a;
+    --text: #e8e0d0;
+    --text-dim: #8a8070;
+    --text-muted: #5a5248;
+    --green: #4a9e6a;
+    --amber: #c4922a;
+    --red: #c45a3a;
+    --radius: 4px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .topbar-logo {
+    width: 32px;
+    height: 32px;
+    background: var(--gold);
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--bg);
+  }
+
+  .topbar-title {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+
+  .topbar-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .api-key-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .api-key-area label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .api-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 10px;
+    width: 240px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .api-input:focus { border-color: var(--gold-dim); }
+  .api-input::placeholder { color: var(--text-muted); }
+
+  /* LAYOUT */
+  .layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-section {
+    padding: 0 16px 8px;
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 16px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+  .nav-item.active {
+    background: var(--surface2);
+    border-left-color: var(--gold);
+    color: var(--gold-light);
+  }
+
+  .nav-icon { font-size: 14px; width: 18px; text-align: center; }
+
+  .nav-status {
+    margin-left: auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .nav-status.done { background: var(--green); }
+  .nav-status.running { background: var(--amber); animation: pulse 1s infinite; }
+  .nav-status.error { background: var(--red); }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .sidebar-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 16px;
+  }
+
+  .run-all-btn {
+    margin: 0 16px;
+    padding: 10px;
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: background 0.2s;
+  }
+
+  .run-all-btn:hover { background: var(--gold-light); }
+  .run-all-btn:disabled { background: var(--text-muted); cursor: not-allowed; }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+    max-width: 900px;
+  }
+
+  /* PROPERTY FORM */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .section-title {
+    font-family: 'Libre Baskerville', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .section-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border: 1px solid var(--gold-dim);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .form-input, .form-textarea, .form-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    border-color: var(--gold-dim);
+  }
+
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--text-muted); }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+
+  .form-select { appearance: none; cursor: pointer; }
+
+  .form-select option { background: var(--surface2); }
+
+  /* ANALYSIS PANEL */
+  .analysis-panel { display: none; }
+  .analysis-panel.active { display: block; }
+
+  .run-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 20px;
+  }
+
+  .run-btn:hover { background: var(--gold); color: var(--bg); }
+  .run-btn:disabled { border-color: var(--text-muted); color: var(--text-muted); cursor: not-allowed; }
+
+  /* OUTPUT AREA */
+  .output-container {
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .output-header {
+    background: var(--surface2);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .output-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .output-body {
+    padding: 20px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100px;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+
+  .output-body.loading {
+    color: var(--text-muted);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* RISK BADGES */
+  .risk-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .risk-green { background: rgba(74,158,106,0.15); color: var(--green); border: 1px solid rgba(74,158,106,0.3); }
+  .risk-amber { background: rgba(196,146,42,0.15); color: var(--amber); border: 1px solid rgba(196,146,42,0.3); }
+  .risk-red { background: rgba(196,90,58,0.15); color: var(--red); border: 1px solid rgba(196,90,58,0.3); }
+
+  /* SUMMARY GRID */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .summary-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+
+  .summary-card-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  /* COPY BTN */
+  .copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 6px;
+    transition: color 0.2s;
+  }
+
+  .copy-btn:hover { color: var(--gold); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state-icon { font-size: 32px; margin-bottom: 12px; }
+  .empty-state-text { font-size: 13px; line-height: 1.6; }
+
+  /* PROPERTY TAG */
+  .property-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .property-tag-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .property-tag-addr {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--gold-light);
+    font-weight: 500;
+  }
+
+  .property-tag-details { color: var(--text-dim); }
+
+  hr.section-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">DD</div>
+    <div>
+      <div class="topbar-title">Ontario DD Agent</div>
+      <div class="topbar-sub">Low-Rise Residential · Due Diligence</div>
+    </div>
+  </div>
+  <div class="api-key-area">
+    <label>API Key</label>
+    <input type="password" class="api-input" id="apiKey" placeholder="sk-ant-..." />
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-section">Analysis Modules</div>
+    <div class="nav-item active" data-panel="property" onclick="switchPanel('property')">
+      <span class="nav-icon">🏗</span> Property Info
+    </div>
+    <div class="nav-item" data-panel="servicing" onclick="switchPanel('servicing')">
+      <span class="nav-icon">🔧</span> Servicing
+      <span class="nav-status" id="status-servicing"></span>
+    </div>
+    <div class="nav-item" data-panel="planning" onclick="switchPanel('planning')">
+      <span class="nav-icon">📋</span> Planning & Zoning
+      <span class="nav-status" id="status-planning"></span>
+    </div>
+    <div class="nav-item" data-panel="subdivision" onclick="switchPanel('subdivision')">
+      <span class="nav-icon">📐</span> Plan of Subdivision
+      <span class="nav-status" id="status-subdivision"></span>
+    </div>
+    <div class="nav-item" data-panel="bestuse" onclick="switchPanel('bestuse')">
+      <span class="nav-icon">💡</span> Best Use
+      <span class="nav-status" id="status-bestuse"></span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="nav-item" data-panel="summary" onclick="switchPanel('summary')">
+      <span class="nav-icon">📊</span> Executive Summary
+      <span class="nav-status" id="status-summary"></span>
+    </div>
+    <div class="sidebar-divider"></div>
+    <button class="run-all-btn" id="runAllBtn" onclick="runAll()">▶ Run All</button>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- PROPERTY INFO PANEL -->
+    <div class="analysis-panel active" id="panel-property">
+      <div class="section-header">
+        <div class="section-title">Property Information</div>
+        <div class="section-badge">Required</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Street Address</label>
+          <input type="text" class="form-input" id="f-address" placeholder="e.g. 70 Jacqueline Street" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Municipality</label>
+          <input type="text" class="form-input" id="f-municipality" placeholder="e.g. City of London, Ontario" />
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Lot Size</label>
+          <input type="text" class="form-input" id="f-lotsize" placeholder="e.g. 7.8 hectares (19.3 acres)" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Use</label>
+          <input type="text" class="form-input" id="f-currentuse" placeholder="e.g. Institutional / School" />
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Official Plan Designation</label>
+          <input type="text" class="form-input" id="f-opdesig" placeholder="e.g. Neighbourhoods Place Type" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Current Zoning</label>
+          <input type="text" class="form-input" id="f-zoning" placeholder="e.g. CF1 – Community Facility" />
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label">Proposed Use / Product Type</label>
+          <input type="text" class="form-input" id="f-proposed" placeholder="e.g. Low-rise residential – townhouses / stacked" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Unit Count</label>
+          <input type="text" class="form-input" id="f-units" placeholder="e.g. 300–400 units" />
+        </div>
+      </div>
+
+      <div class="form-grid full">
+        <div class="form-group">
+          <label class="form-label">Additional Context / Known Issues</label>
+          <textarea class="form-textarea" id="f-context" placeholder="e.g. CF1 zoning requires ZBA. Greenway WWTP capacity constrained. Child care lease on 2.14 acres. Sealed bid deadline March 31 2026. As-is sale, no environmental reps from vendor..."></textarea>
+        </div>
+      </div>
+
+      <button class="run-btn" onclick="switchPanel('servicing')">Next: Servicing Analysis →</button>
+    </div>
+
+    <!-- SERVICING PANEL -->
+    <div class="analysis-panel" id="panel-servicing">
+      <div class="section-header">
+        <div class="section-title">Servicing Feasibility</div>
+        <div class="section-badge">Module 1</div>
+      </div>
+      <div id="propertytag-servicing"></div>
+      <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">Analyzes water, sanitary, stormwater, roads, and dry utilities. Identifies capacity constraints, required upgrades, front-ending risk, and cost estimates.</p>
+      <button class="run-btn" id="btn-servicing" onclick="runModule('servicing')">▶ Run Servicing Analysis</button>
+      <div class="output-container" id="out-servicing" style="display:none">
+        <div class="output-header">
+          <span class="output-label">Servicing Analysis Output</span>
+          <button class="copy-btn" onclick="copyOutput('servicing')">Copy</button>
+        </div>
+        <div class="output-body" id="outbody-servicing"></div>
+      </div>
+    </div>
+
+    <!-- PLANNING PANEL -->
+    <div class="analysis-panel" id="panel-planning">
+      <div class="section-header">
+        <div class="section-title">Planning & Zoning</div>
+        <div class="section-badge">Module 2</div>
+      </div>
+      <div id="propertytag-planning"></div>
+      <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">Reviews OP designation, zoning, required amendments (OPA/ZBA), PPS 2024 conformity, Growth Plan policies, and estimated approval timeline.</p>
+      <button class="run-btn" id="btn-planning" onclick="runModule('planning')">▶ Run Planning Analysis</button>
+      <div class="output-container" id="out-planning" style="display:none">
+        <div class="output-header">
+          <span class="output-label">Planning & Zoning Output</span>
+          <button class="copy-btn" onclick="copyOutput('planning')">Copy</button>
+        </div>
+        <div class="output-body" id="outbody-planning"></div>
+      </div>
+    </div>
+
+    <!-- SUBDIVISION PANEL -->
+    <div class="analysis-panel" id="panel-subdivision">
+      <div class="section-header">
+        <div class="section-title">Plan of Subdivision</div>
+        <div class="section-badge">Module 3</div>
+      </div>
+      <div id="propertytag-subdivision"></div>
+      <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">Assesses s.51 Planning Act subdivision requirements, draft plan conditions, phasing strategy, development charges, and parkland dedication.</p>
+      <button class="run-btn" id="btn-subdivision" onclick="runModule('subdivision')">▶ Run Subdivision Analysis</button>
+      <div class="output-container" id="out-subdivision" style="display:none">
+        <div class="output-header">
+          <span class="output-label">Subdivision Analysis Output</span>
+          <button class="copy-btn" onclick="copyOutput('subdivision')">Copy</button>
+        </div>
+        <div class="output-body" id="outbody-subdivision"></div>
+      </div>
+    </div>
+
+    <!-- BEST USE PANEL -->
+    <div class="analysis-panel" id="panel-bestuse">
+      <div class="section-header">
+        <div class="section-title">Best Use Analysis</div>
+        <div class="section-badge">Module 4</div>
+      </div>
+      <div id="propertytag-bestuse"></div>
+      <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">Evaluates yield, density options, product mix recommendations, revenue per unit estimates, and land value benchmarking for Ontario low-rise residential.</p>
+      <button class="run-btn" id="btn-bestuse" onclick="runModule('bestuse')">▶ Run Best Use Analysis</button>
+      <div class="output-container" id="out-bestuse" style="display:none">
+        <div class="output-header">
+          <span class="output-label">Best Use Output</span>
+          <button class="copy-btn" onclick="copyOutput('bestuse')">Copy</button>
+        </div>
+        <div class="output-body" id="outbody-bestuse"></div>
+      </div>
+    </div>
+
+    <!-- SUMMARY PANEL -->
+    <div class="analysis-panel" id="panel-summary">
+      <div class="section-header">
+        <div class="section-title">Executive Summary</div>
+        <div class="section-badge">Auto-Generated</div>
+      </div>
+      <div id="propertytag-summary"></div>
+      <p style="color:var(--text-dim);font-size:13px;line-height:1.7;">Synthesizes all four modules into a concise DD summary with 🟢/🟡/🔴 risk ratings across servicing, planning, subdivision, and best use. Run all modules first for best results.</p>
+      <button class="run-btn" id="btn-summary" onclick="runModule('summary')">▶ Generate Executive Summary</button>
+      <div class="output-container" id="out-summary" style="display:none">
+        <div class="output-header">
+          <span class="output-label">Executive Summary Output</span>
+          <button class="copy-btn" onclick="copyOutput('summary')">Copy</button>
+        </div>
+        <div class="output-body" id="outbody-summary"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+const outputs = { servicing: '', planning: '', subdivision: '', bestuse: '', summary: '' };
+const moduleOrder = ['servicing', 'planning', 'subdivision', 'bestuse', 'summary'];
+
+// ─── NAVIGATION ──────────────────────────────────────
+function switchPanel(name) {
+  document.querySelectorAll('.analysis-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.querySelector('[data-panel="' + name + '"]').classList.add('active');
+  updatePropertyTags();
+}
+
+// ─── PROPERTY TAG ────────────────────────────────────
+function updatePropertyTags() {
+  const addr = document.getElementById('f-address').value || 'No address entered';
+  const muni = document.getElementById('f-municipality').value || '';
+  const size = document.getElementById('f-lotsize').value || '';
+  const label = [addr, muni].filter(Boolean).join(', ');
+  const details = [size, document.getElementById('f-zoning').value].filter(Boolean).join(' · ');
+
+  moduleOrder.forEach(m => {
+    const el = document.getElementById('propertytag-' + m);
+    if (el) {
+      el.innerHTML = `<div class="property-tag">
+        <div class="property-tag-dot"></div>
+        <span class="property-tag-addr">${label}</span>
+        ${details ? `<span class="property-tag-details">${details}</span>` : ''}
+      </div>`;
+    }
+  });
+}
+
+// ─── GET PROPERTY DATA ───────────────────────────────
+function getPropertyData() {
+  return {
+    address: document.getElementById('f-address').value,
+    municipality: document.getElementById('f-municipality').value,
+    lotSize: document.getElementById('f-lotsize').value,
+    currentUse: document.getElementById('f-currentuse').value,
+    opDesignation: document.getElementById('f-opdesig').value,
+    zoning: document.getElementById('f-zoning').value,
+    proposedUse: document.getElementById('f-proposed').value,
+    targetUnits: document.getElementById('f-units').value,
+    context: document.getElementById('f-context').value,
+  };
+}
+
+// ─── PROMPTS ─────────────────────────────────────────
+function buildPrompt(module, prop) {
+  const base = `You are an expert Ontario real estate development consultant specializing in low-rise residential due diligence. 
+Property: ${prop.address}, ${prop.municipality}
+Lot Size: ${prop.lotSize}
+Current Use: ${prop.currentUse}
+Official Plan: ${prop.opDesignation}
+Zoning: ${prop.zoning}
+Proposed Use: ${prop.proposedUse}
+Target Units: ${prop.targetUnits}
+Additional Context: ${prop.context}`;
+
+  const prompts = {
+    servicing: `${base}
+
+Provide a detailed SERVICING FEASIBILITY analysis covering:
+1. Sanitary sewer — availability, capacity risks, WWTP constraints, required upgrades
+2. Water supply — watermain size/availability, pressure zones, booster requirements
+3. Stormwater management — SWM pond requirements, LID opportunities, external drainage
+4. Roads & access — frontage classification, road widening, turning lanes, traffic studies
+5. Dry utilities — hydro, gas, telecom availability
+6. Cost estimates — rough servicing cost ranges per unit and total
+7. Key risks — red flags that could kill the deal or materially impact economics
+
+Be specific to Ontario municipal practice. Use bullet points and clear headings. Keep it under 900 words.`,
+
+    planning: `${base}
+
+Provide a detailed PLANNING & ZONING analysis covering:
+1. Current zoning — permitted uses, non-conformities, holding provisions
+2. Required approvals — OPA, ZBA, site plan, what triggers each
+3. Official Plan conformity — policies supporting or constraining the proposal
+4. PPS 2024 analysis — relevant provincial policy support
+5. Precedent — comparable approvals in this municipality
+6. Approval timeline — realistic schedule from application to draft approval
+7. Appeal risk — likelihood of third-party appeals, OLT exposure
+8. Key risks — planning red flags
+
+Be specific to Ontario Planning Act process. Use bullet points and clear headings. Keep it under 900 words.`,
+
+    subdivision: `${base}
+
+Provide a detailed PLAN OF SUBDIVISION analysis covering:
+1. Subdivision vs. condominium — which instrument is appropriate and why
+2. Draft plan requirements — typical conditions expected from municipality
+3. Phasing strategy — recommended phasing given site size and market absorption
+4. Development charges — estimated DC exposure at current rates (provide $ ranges)
+5. Parkland dedication — 5% land or cash-in-lieu, how it applies here
+6. Servicing agreements — what agreements will be required
+7. Subdivision timeline — from draft plan application to registration
+8. Key risks — conditions that could cause delay or cost overrun
+
+Be specific to Ontario Planning Act s.51 process. Use bullet points and clear headings. Keep it under 900 words.`,
+
+    bestuse: `${base}
+
+Provide a BEST USE ANALYSIS covering:
+1. Highest and best use — recommended product type(s) with rationale
+2. Yield analysis — unit count range by built form (freehold towns, stacked, lowrise apt)
+3. Density — achievable units/hectare range and what City will likely support
+4. Revenue benchmarking — estimated revenue per unit by product type for this market
+5. Land value — implied land value per unit and per acre at current Ontario low-rise metrics
+6. Product mix recommendation — optimal mix given site, market, and approvals risk
+7. Comparable projects — 2-3 comparable Ontario projects and their densities/pricing
+8. Key risks — market and execution risks
+
+Be specific to Ontario low-rise residential market conditions. Use bullet points and clear headings. Keep it under 900 words.`,
+
+    summary: `${base}
+
+Previous analysis outputs:
+SERVICING: ${outputs.servicing || 'Not yet run'}
+PLANNING: ${outputs.planning || 'Not yet run'}
+SUBDIVISION: ${outputs.subdivision || 'Not yet run'}
+BEST USE: ${outputs.bestuse || 'Not yet run'}
+
+Generate a concise EXECUTIVE DD SUMMARY covering:
+1. Property snapshot — 3-4 sentence overview
+2. Risk scorecard — rate each of the following 🟢 LOW / 🟡 MEDIUM / 🔴 HIGH with one-line rationale:
+   • Servicing risk
+   • Planning / approvals risk  
+   • Subdivision / execution risk
+   • Market / best use risk
+3. Overall recommendation — Proceed / Proceed with conditions / Do not proceed, and why
+4. Top 3 deal conditions — the conditions you'd put in an offer to protect against key risks
+5. Immediate next steps — top 5 actions in the next 30 days
+
+Keep it under 600 words. Be direct and decisive.`
+  };
+
+  return prompts[module];
+}
+
+// ─── RUN MODULE ──────────────────────────────────────
+async function runModule(module) {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  if (!apiKey) { alert('Please enter your Anthropic API key in the top bar.'); return; }
+
+  const prop = getPropertyData();
+  if (!prop.address) { alert('Please enter a property address first.'); switchPanel('property'); return; }
+
+  const btn = document.getElementById('btn-' + module);
+  const outContainer = document.getElementById('out-' + module);
+  const outBody = document.getElementById('outbody-' + module);
+  const statusDot = document.getElementById('status-' + module);
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+  outContainer.style.display = 'block';
+  outBody.className = 'output-body loading';
+  outBody.innerHTML = '<div class="spinner"></div> Analyzing...';
+  if (statusDot) { statusDot.className = 'nav-status running'; }
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: buildPrompt(module, prop) }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || 'No response received.';
+    outputs[module] = text;
+
+    outBody.className = 'output-body';
+    outBody.textContent = text;
+    if (statusDot) statusDot.className = 'nav-status done';
+
+  } catch (err) {
+    outBody.className = 'output-body';
+    outBody.textContent = '❌ Error: ' + err.message;
+    if (statusDot) statusDot.className = 'nav-status error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Re-run ' + module.charAt(0).toUpperCase() + module.slice(1);
+}
+
+// ─── RUN ALL ─────────────────────────────────────────
+async function runAll() {
+  const btn = document.getElementById('runAllBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running...';
+
+  for (const module of moduleOrder) {
+    switchPanel(module);
+    await runModule(module);
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run All';
+  switchPanel('summary');
+}
+
+// ─── COPY OUTPUT ─────────────────────────────────────
+function copyOutput(module) {
+  if (outputs[module]) {
+    navigator.clipboard.writeText(outputs[module]).then(() => {
+      const btn = event.target;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+}
+
+// ─── SAVE API KEY IN SESSION ──────────────────────────
+const savedKey = sessionStorage.getItem('dd_api_key');
+if (savedKey) document.getElementById('apiKey').value = savedKey;
+document.getElementById('apiKey').addEventListener('input', e => {
+  sessionStorage.setItem('dd_api_key', e.target.value);
+});
+
+// ─── INIT ─────────────────────────────────────────────
+updatePropertyTags();
+</script>
+</body>
+</html>
